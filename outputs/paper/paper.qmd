@@ -1,0 +1,110 @@
+---
+title: "Explore Toronto crime data: Relationship between crimes, age and sex in Toronto crime statistics"
+title-block-banner: true
+thanks: "Code and data supporting this analysis is available at: https://github.com/UofT-DailinLi/toronto-crime-report.git"
+author: "Ben Li"
+date: today
+date-format: long
+editor: visual
+format: pdf
+toc: TRUE
+number-sections: true
+bibliography: ref.bib
+---
+
+```{r echo=FALSE, message=FALSE}
+# install.packages("caret")
+# install.packages("nflverse")
+library(nflverse)
+# install.packages("nflreadr") 
+library(nflreadr)
+library(opendatatoronto)
+library(tidyverse)
+library(caret)
+library(lmtest)
+library(here)
+library(knitr)
+```
+
+```{r echo=FALSE, message=FALSE}
+qb_regular_season_stats <- load_player_stats(seasons = TRUE) |> filter(season_type == "REG" & position == "QB")
+
+qb_data <- qb_regular_season_stats %>%
+filter(week <= 9, season == 2023)
+```
+
+```{r echo=FALSE, message=FALSE}
+write_csv(
+  x = qb_data,
+  file = "qb_data_clean.csv")
+
+```
+
+```{r echo=FALSE, message=FALSE}
+# Load necessary libraries
+
+
+# Read the data
+data = read_csv(
+    file = here("outputs/data/qb_data_clean.csv"), show_col_types = FALSE)
+
+# Selecting relevant columns
+df <- data %>% select(passing_epa, attempts, completions, passing_yards, passing_tds, interceptions, sacks)
+
+# Removing rows with NA values in any of the selected columns
+df <- na.omit(df)
+
+# Splitting the data into training and test sets
+set.seed(123) # For reproducibility
+splitIndex <- createDataPartition(df$passing_epa, p = .8, list = FALSE)
+train <- df[splitIndex, ]
+test <- df[-splitIndex, ]
+
+# Building the linear regression model
+model <- lm(passing_epa ~ attempts + completions + passing_yards + passing_tds + interceptions + sacks, data = train)
+
+# Summary of the model to see coefficients and statistics
+
+
+# Predicting on the test set
+predictions <- predict(model, newdata = test)
+
+# Evaluating the model with RMSE (Root Mean Squared Error)
+
+rmse <- sqrt(mean((predictions - test$passing_epa)^2))
+print(paste("RMSE on test set:", rmse))
+
+
+```
+
+# Introduction
+
+Football is an established industry in the United States with teams, fans, franchise merchandise, etc., and a complete economic system. Understanding the dynamics of a team can help a team succeed on the field. One of the important metrics when evaluating individual plays' effectiveness is Expected Points Added (EPA). This score effectively quantifies the impact of individual plays on scoring and can capture information beyond traditional methods. In this study, we predicted passing EPA through a linear regression model utilizing a variety of game-related variables. By focusing on quarterback performance, we analyzed the key factors that influence a team's ability to score.
+
+# Data
+
+Our dataset was obtained from Opentoronto and includes 15449 observations and 53 variables [@rOpenDataToronto]. We are only curious about the regional session QB position in the first nine weeks of 2023. Therefore, the number of observations dropped to 335. so the  Individual data from games inside the NFL are included, with a focus on quarterbacks (QB). The selected predictors include pass attempts, completions, passing yards, passing touchdowns, interceptions, and sacks. These variables were chosen because they are closely related to passing performance and may have a potential impact on EPA. The dataset was divided into a training set and a test set, randomly assigned in an 80-20 ratio, to develop the model and test its predictive ability. 
+
+Data was cleaned and analyzed using the open source statistical programming language R [@r], and additional packages from `tidyverse` [@rTidyverse], `ggplot2` [@rGgplot2], ` nflverse ` [@nflverse], `here`[@rhere], `nflreadr`[@nflreadr], `caret`[@caret], `lmtest`[@lmtest] and `knitr` [@rKnitr]. The cleaned dataset contains 318 observations, and four variables will be shown below.
+
+
+
+
+
+
+```{r echo=FALSE, message=FALSE, fig.cap="Actual vs. Predicted passing EPA", fig.width=6, fig.height=4,label= "fig-act-pre"}
+knitr::opts_chunk$set(fig.pos = 'H')
+
+library(ggplot2)
+ggplot(test, aes(x = passing_epa, y = predictions)) +
+  geom_point() +
+  geom_line(aes(x = passing_epa, y = passing_epa), color = 'red') +
+  theme_minimal() +
+  labs(x = "Actual passing EPA", y = "Predicted passing EPA")
+
+```
+
+
+
+
+# Reference
