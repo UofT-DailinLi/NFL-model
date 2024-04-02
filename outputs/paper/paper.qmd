@@ -1,5 +1,5 @@
 ---
-title: "Explore Toronto crime data: Relationship between crimes, age and sex in Toronto crime statistics"
+title: "Predicting Expected Points Added in Football: A Linear Regression Approach"
 title-block-banner: true
 thanks: "Code and data supporting this analysis is available at: https://github.com/UofT-DailinLi/toronto-crime-report.git"
 author: "Ben Li"
@@ -34,9 +34,9 @@ filter(week <= 9, season == 2023)
 ```
 
 ```{r echo=FALSE, message=FALSE}
-write_csv(
-  x = qb_data,
-  file = "qb_data_clean.csv")
+# write_csv(
+#  x = qb_data,
+#  file = "qb_data_clean.csv")
 
 ```
 
@@ -72,7 +72,6 @@ predictions <- predict(model, newdata = test)
 # Evaluating the model with RMSE (Root Mean Squared Error)
 
 rmse <- sqrt(mean((predictions - test$passing_epa)^2))
-print(paste("RMSE on test set:", rmse))
 
 
 ```
@@ -88,14 +87,22 @@ Our dataset was obtained from Opentoronto and includes 15449 observations and 53
 Data was cleaned and analyzed using the open source statistical programming language R [@r], and additional packages from `tidyverse` [@rTidyverse], `ggplot2` [@rGgplot2], ` nflverse ` [@nflverse], `here`[@rhere], `nflreadr`[@nflreadr], `caret`[@caret], `lmtest`[@lmtest] and `knitr` [@rKnitr]. The cleaned dataset contains 318 observations, and four variables will be shown below.
 
 
+# Model
+
+\begin{align*}
+\text{passing\_epa} = \ & \beta_0 + \beta_1 \times \text{attempts} + \beta_2 \times \text{completions} + \\
+& \beta_3 \times \text{passing\_yards} + \beta_4 \times \text{passing\_tds} + \beta_5 \times \text{interceptions} + \\
+& \beta_6 \times \text{sacks} + \epsilon
+\end{align*}
+
+This is the linear model we used. In this equation $\beta_0$ = -0.79499 , $\beta_1$ = -0.82374, $\beta_2$ = 0.45150, $\beta_3$ = 0.09936, $\beta_4$ = 1.92008, $\beta_5$ = -3.37566 , $\beta_6$ = -1.91623 . 
 
 
+```{r echo=FALSE, message=FALSE, fig.cap="Actual vs. Predicted passing EPA", fig.width=6, fig.height=4,label= "fig-act-pre",fig.pos="!h"}
 
-
-```{r echo=FALSE, message=FALSE, fig.cap="Actual vs. Predicted passing EPA", fig.width=6, fig.height=4,label= "fig-act-pre"}
-knitr::opts_chunk$set(fig.pos = 'H')
 
 library(ggplot2)
+
 ggplot(test, aes(x = passing_epa, y = predictions)) +
   geom_point() +
   geom_line(aes(x = passing_epa, y = passing_epa), color = 'red') +
@@ -104,7 +111,12 @@ ggplot(test, aes(x = passing_epa, y = predictions)) +
 
 ```
 
+The scatterplot in @fig-act-pre  illustrates the relationship between the predicted and actual values of epa predicted by the regression model. Each point represents a value in a test dataset. The y-axis represents the predicted value from the model, the x-axis represents the actual value, and this red line represents the perfect prediction line, which means that the predicted and actual values are equal. The distance from these surrounding points to the line is the error. Overall, our model has relatively predictive solid power. However, the error may be likely due to the fact that the selected variables do not fully capture all the variations in the passing-EPA.
 
 
+# Discussion
+The resulting root mean square error is 4.2637 points, which indicates that, on average, the predicted values of our model do not differ much from the actual values of EPA. This error also suggests that the range of EPA should be analyzed using a case-by-case approach in soccer analysis. Moreover, key factors such as pass attempts and touchdowns are expected to be positively correlated with EPA, reflecting successful offensive plays. Conversely, interceptions and sacks may show a negative correlation.
 
+
+\newpage
 # Reference
